@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Annotate: First-Class Lever System</title>
+<style>
+  :root{
+    --ink:#16233f;
+    --ink-soft:#3d4d6e;
+    --teal:#1f6f78;
+    --teal-dark:#155158;
+    --paper:#f3f5f4;
+    --card:#ffffff;
+    --line:#dbe1e4;
+    --amber:#c5622a;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  header{
+    background:var(--ink);
+    color:#fff;
+    padding:14px 20px;
+  }
+  header h1{
+    margin:0 0 2px 0;
+    font-size:1.25rem;
+    font-weight:600;
+    letter-spacing:.2px;
+  }
+  header p{
+    margin:0;
+    color:#c3ccdc;
+    font-size:.9rem;
+  }
+  .instructions{
+    max-width:1100px;
+    margin:16px auto 0 auto;
+    padding:14px 18px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-left:4px solid var(--teal);
+    border-radius:var(--radius);
+  }
+  .instructions h2{
+    margin:0 0 6px 0;
+    font-size:.95rem;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:var(--teal-dark);
+  }
+  .instructions ol{
+    margin:0;
+    padding-left:20px;
+    font-size:.95rem;
+    line-height:1.5;
+  }
+  .stage{
+    max-width:1100px;
+    margin:16px auto 40px auto;
+    padding:0 18px;
+  }
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius) var(--radius) 0 0;
+    padding:10px 12px;
+  }
+  .tool-group{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding-right:10px;
+    border-right:1px solid var(--line);
+  }
+  .tool-group:last-child{border-right:none;}
+  .swatch{
+    width:34px;height:34px;border-radius:50%;
+    border:2px solid transparent;
+    cursor:pointer;
+    padding:0;
+  }
+  .swatch.active{border-color:var(--ink);}
+  button.toolbtn{
+    min-height:40px;
+    min-width:40px;
+    padding:6px 12px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#fafbfb;
+    color:var(--ink);
+    font-size:.9rem;
+    cursor:pointer;
+  }
+  button.toolbtn:active{background:var(--line);}
+  button.primary{
+    background:var(--teal);
+    border-color:var(--teal-dark);
+    color:#fff;
+    font-weight:600;
+  }
+  button.primary:active{background:var(--teal-dark);}
+  input[type="range"]{width:90px;}
+  .thickness-label{font-size:.8rem;color:var(--ink-soft);min-width:34px;text-align:right;}
+  .canvas-wrap{
+    position:relative;
+    background:#fff;
+    border:1px solid var(--line);
+    border-top:none;
+    border-radius:0 0 var(--radius) var(--radius);
+    touch-action:none;
+    overflow:hidden;
+  }
+  #baseDiagram, #annotate{
+    display:block;
+    width:100%;
+    height:auto;
+  }
+  #annotate{
+    position:absolute;
+    top:0;left:0;
+    cursor:crosshair;
+  }
+  .hint{
+    margin-top:8px;
+    font-size:.8rem;
+    color:var(--ink-soft);
+  }
+  footer{
+    text-align:center;
+    font-size:.75rem;
+    color:var(--ink-soft);
+    padding:20px 0 30px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Annotate the Diagram — First-Class Lever</h1>
+  <p>VCE Systems Engineering · Mechanical Systems · Use your stylus to label and mark up</p>
+</header>
+
+<div class="instructions">
+  <h2>Task</h2>
+  <ol>
+    <li>Label the <strong>load</strong>, <strong>effort</strong> and <strong>fulcrum</strong> on the diagram.</li>
+    <li>Mark the load arm distance (d<sub>L</sub>) and effort arm distance (d<sub>E</sub>) with arrows.</li>
+    <li>In the space below the beam, write the mechanical advantage formula and calculate MA for this system.</li>
+    <li>Circle whether this arrangement gives a force advantage or a distance/speed advantage.</li>
+  </ol>
+</div>
+
+<div class="stage">
+  <div class="toolbar">
+    <div class="tool-group">
+      <button class="swatch active" style="background:#16233f" data-color="#16233f" title="Navy"></button>
+      <button class="swatch" style="background:#1f6f78" data-color="#1f6f78" title="Teal"></button>
+      <button class="swatch" style="background:#c5622a" data-color="#c5622a" title="Amber"></button>
+      <button class="swatch" style="background:#b02a2a" data-color="#b02a2a" title="Red"></button>
+    </div>
+    <div class="tool-group">
+      <span class="thickness-label" id="thicknessLabel">3px</span>
+      <input type="range" id="thickness" min="1" max="12" value="3">
+    </div>
+    <div class="tool-group">
+      <button class="toolbtn" id="eraserBtn">Eraser</button>
+      <button class="toolbtn" id="undoBtn">Undo</button>
+      <button class="toolbtn" id="clearBtn">Clear all</button>
+    </div>
+    <div class="tool-group" style="border-right:none;margin-left:auto;">
+      <button class="toolbtn primary" id="saveBtn">Save as image</button>
+    </div>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <svg id="baseDiagram" viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ground -->
+      <rect x="0" y="360" width="900" height="60" fill="#eef1f0"/>
+      <line x1="0" y1="360" x2="900" y2="360" stroke="#c7cfd2" stroke-width="2"/>
+      <!-- Fulcrum triangle -->
+      <polygon points="450,300 425,360 475,360" fill="#4a5b7a"/>
+      <text x="450" y="392" text-anchor="middle" font-size="15" fill="#3d4d6e" font-family="sans-serif">fulcrum</text>
+      <!-- Beam pivoted on fulcrum -->
+      <rect x="140" y="292" width="620" height="16" rx="3" fill="#c5622a" transform="rotate(-6 450 300)"/>
+      <!-- Load side blob -->
+      <circle cx="190" cy="272" r="26" fill="none" stroke="#16233f" stroke-width="2" stroke-dasharray="4 4"/>
+      <text x="190" y="245" text-anchor="middle" font-size="15" fill="#16233f" font-family="sans-serif">?</text>
+      <!-- Effort side blob -->
+      <circle cx="720" cy="330" r="26" fill="none" stroke="#16233f" stroke-width="2" stroke-dasharray="4 4"/>
+      <text x="720" y="303" text-anchor="middle" font-size="15" fill="#16233f" font-family="sans-serif">?</text>
+      <!-- Distance reference dashes along ground -->
+      <line x1="190" y1="360" x2="190" y2="375" stroke="#9aa5ad" stroke-width="1"/>
+      <line x1="450" y1="360" x2="450" y2="375" stroke="#9aa5ad" stroke-width="1"/>
+      <line x1="720" y1="360" x2="720" y2="375" stroke="#9aa5ad" stroke-width="1"/>
+      <!-- Working / calculation lane -->
+      <line x1="20" y1="410" x2="880" y2="410" stroke="#e3e7e8" stroke-width="1" stroke-dasharray="3 5"/>
+    </svg>
+    <canvas id="annotate"></canvas>
+  </div>
+  <p class="hint">Diagram intentionally leaves the load/effort unlabelled — that's the student's job. Swap the &lt;svg&gt;#baseDiagram block for a circuit diagram or photo to reuse this page for another topic; everything else works unchanged.</p>
+</div>
+
+<footer>Template built for Schoolbox upload · works fully offline, no external files required</footer>
+
+<script>
+(function(){
+  const svg = document.getElementById('baseDiagram');
+  const canvas = document.getElementById('annotate');
+  const wrap = document.getElementById('canvasWrap');
+  const ctx = canvas.getContext('2d');
+
+  let color = '#16233f';
+  let thickness = 3;
+  let erasing = false;
+  let drawing = false;
+  let lastX = 0, lastY = 0;
+  let history = []; // snapshots for undo
+
+  function resizeCanvas(){
+    const rect = svg.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    const prev = canvas.toDataURL ? null : null;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+    ctx.setTransform(ratio,0,0,ratio,0,0);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function saveHistory(){
+    // cap history to last 25 states to avoid memory bloat
+    history.push(canvas.toDataURL());
+    if(history.length > 25) history.shift();
+  }
+
+  function pointerPos(e){
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  canvas.addEventListener('pointerdown', (e)=>{
+    saveHistory();
+    drawing = true;
+    canvas.setPointerCapture(e.pointerId);
+    const p = pointerPos(e);
+    lastX = p.x; lastY = p.y;
+    // dot for taps
+    drawSegment(p.x, p.y, p.x, p.y, e.pressure);
+  });
+
+  canvas.addEventListener('pointermove', (e)=>{
+    if(!drawing) return;
+    const p = pointerPos(e);
+    drawSegment(lastX, lastY, p.x, p.y, e.pressure);
+    lastX = p.x; lastY = p.y;
+  });
+
+  function endStroke(e){
+    drawing = false;
+  }
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointercancel', endStroke);
+  canvas.addEventListener('pointerleave', endStroke);
+
+  function drawSegment(x0,y0,x1,y1,pressure){
+    const p = (pressure && pressure > 0) ? pressure : 0.5;
+    ctx.globalCompositeOperation = erasing ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = erasing ? thickness * 4 : Math.max(1, thickness * (0.5 + p));
+    ctx.beginPath();
+    ctx.moveTo(x0,y0);
+    ctx.lineTo(x1,y1);
+    ctx.stroke();
+  }
+
+  // Toolbar wiring
+  document.querySelectorAll('.swatch').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.swatch').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      color = btn.dataset.color;
+      erasing = false;
+      document.getElementById('eraserBtn').style.background = '#fafbfb';
+    });
+  });
+
+  const thicknessInput = document.getElementById('thickness');
+  const thicknessLabel = document.getElementById('thicknessLabel');
+  thicknessInput.addEventListener('input', ()=>{
+    thickness = parseInt(thicknessInput.value,10);
+    thicknessLabel.textContent = thickness + 'px';
+  });
+
+  const eraserBtn = document.getElementById('eraserBtn');
+  eraserBtn.addEventListener('click', ()=>{
+    erasing = !erasing;
+    eraserBtn.style.background = erasing ? '#dbe1e4' : '#fafbfb';
+  });
+
+  document.getElementById('undoBtn').addEventListener('click', ()=>{
+    if(history.length === 0){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      return;
+    }
+    const dataUrl = history.pop();
+    const img = new Image();
+    img.onload = ()=>{
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.restore();
+      ctx.drawImage(img, 0, 0, canvas.width / (window.devicePixelRatio||1), canvas.height / (window.devicePixelRatio||1));
+    };
+    img.src = dataUrl;
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', ()=>{
+    if(confirm('Clear all annotations on this diagram?')){
+      saveHistory();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', ()=>{
+    const rect = svg.getBoundingClientRect();
+    const out = document.createElement('canvas');
+    out.width = rect.width * 2;
+    out.height = rect.height * 2;
+    const octx = out.getContext('2d');
+    octx.fillStyle = '#ffffff';
+    octx.fillRect(0,0,out.width,out.height);
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = ()=>{
+      octx.drawImage(img, 0, 0, out.width, out.height);
+      octx.drawImage(canvas, 0, 0, out.width, out.height);
+      URL.revokeObjectURL(url);
+      const link = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      link.download = 'lever-annotation-' + stamp + '.png';
+      link.href = out.toDataURL('image/png');
+      link.click();
+    };
+    img.src = url;
+  });
+})();
+</script>
+
+</body>
+</html>
