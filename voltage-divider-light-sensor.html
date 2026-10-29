@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Light and dark sensor: voltage divider and transistor</title>
+<style>
+:root{--bg:#fff;--card:#f4f6f9;--t:#1f2a37;--ts:#5b6573;--bd:#c9d0da;--navy:#1F3A5F;--teal:#1B7F8C;--amber:#B7791F;--led:#E24B4A;--light:#E0A100;
+--off-f:#E9EBEE;--act-f:#FBEBCB;--sat-f:#E1F0D5;--off-t:#444b55;--act-t:#6B4A00;--sat-t:#27500A}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1f24;--card:#262b33;--t:#e8eaed;--ts:#a8b0bb;--bd:#424955;--navy:#8fb4e3;--teal:#5cc2cf;--amber:#e0a94c;--led:#ff6b66;--light:#ffd45c;
+--off-f:#2f343b;--act-f:#4a3410;--sat-f:#24400f;--off-t:#c5cad2;--act-t:#f3d49a;--sat-t:#c0dd97}}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,"Segoe UI",Calibri,Arial,sans-serif;line-height:1.5}
+.wrap{max-width:780px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px;color:var(--navy)}
+h2{font-size:17px;margin:26px 0 8px;color:var(--navy);padding-bottom:4px;border-bottom:2px solid var(--teal)}
+p.sub{margin:0 0 12px;color:var(--ts)}
+svg{width:100%;height:auto;display:block}
+svg text{font-family:inherit}
+.t{font-size:14px;fill:var(--t)}.ts{font-size:12px;fill:var(--ts)}.th{font-size:14px;font-weight:600;fill:var(--t)}.big{font-size:15px;font-weight:600;fill:var(--navy)}
+.wire{stroke:var(--t);stroke-width:1.5;fill:none;stroke-linecap:round}
+.part{stroke:var(--t);stroke-width:1.5;fill:none}
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-top:8px}
+.panel h3{margin:0 0 8px;font-size:14px;color:var(--navy)}
+.row{display:flex;flex-wrap:wrap;gap:12px 22px;align-items:flex-end}
+.field label,.lab{display:block;font-size:13px;font-weight:600;margin-bottom:2px}
+.field output{display:inline-block;min-width:5.5em;font-variant-numeric:tabular-nums}
+input[type=range]{width:240px;accent-color:var(--teal)}
+button,select{font:inherit;font-size:14px;padding:7px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--t);cursor:pointer}
+button:hover,select:hover{border-color:var(--teal)}
+select:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.badge{display:inline-block;padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
+.badge.off{background:var(--off-f);color:var(--off-t);border:1px solid var(--bd)}
+.badge.act{background:var(--act-f);color:var(--act-t);border:1px solid var(--amber)}
+.badge.sat{background:var(--sat-f);color:var(--sat-t);border:1px solid #3B6D11}
+.badge.cfg{background:var(--navy);color:var(--bg)}
+.state{display:flex;gap:12px;align-items:flex-start;margin:14px 0 10px}
+.state p,.panel p{margin:0;font-size:15px}
+.panel p + p{margin-top:6px}
+.calc{font-variant-numeric:tabular-nums;color:var(--navy);font-weight:600}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin-top:10px}
+.rd{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
+.rd span{display:block;font-size:12px;color:var(--ts)}
+.rd b{font-size:16px;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--ts);margin-top:4px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px;border:1px solid var(--bd)}
+details{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;margin:8px 0}
+summary{cursor:pointer;font-weight:600}
+details p{margin:8px 0 0;font-size:15px}
+.note{font-size:13px;color:var(--ts);margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Light and dark sensor: voltage divider and transistor</h1>
+<p class="sub">A voltage divider makes the input voltage for the transistor. Choose what goes in the top and bottom positions, then change the light level.</p>
+
+<svg id="ckt" viewBox="0 0 680 470" role="img" aria-label="Circuit: a voltage divider made from a top and bottom component between 5 volts and ground. The divider output passes through a base resistor to an NPN transistor that switches an LED.">
+  <defs>
+    <g id="resSym"><rect class="part" x="142" y="190" width="16" height="60" rx="2"/></g>
+    <g id="ldrSym">
+      <circle class="part" cx="150" cy="220" r="36"/>
+      <rect class="part" x="142" y="190" width="16" height="60" rx="2"/>
+      <g id="arrows" stroke="var(--light)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5">
+        <line x1="74" y1="196" x2="112" y2="212"/><polyline points="103,212.6 112,212 106.2,205.2"/>
+        <line x1="74" y1="214" x2="112" y2="230"/><polyline points="103,230.6 112,230 106.2,223.2"/>
+      </g>
+      <text class="ts" x="84" y="186" text-anchor="middle">Light</text>
+    </g>
+  </defs>
+
+  <!-- rails -->
+  <text class="th" x="285" y="28" text-anchor="middle">+5 V</text>
+  <line class="wire" x1="150" y1="38" x2="420" y2="38"/>
+  <line class="wire" x1="150" y1="440" x2="420" y2="440"/>
+  <line class="wire" x1="285" y1="440" x2="285" y2="444"/>
+  <line class="wire" x1="269" y1="444" x2="301" y2="444"/>
+  <line class="wire" x1="275" y1="450" x2="295" y2="450"/>
+  <line class="wire" x1="281" y1="456" x2="289" y2="456"/>
+  <text class="ts" x="312" y="454">GND (0 V)</text>
+
+  <!-- voltage divider -->
+  <line class="wire" x1="150" y1="38" x2="150" y2="190"/>
+  <line class="wire" x1="150" y1="250" x2="150" y2="350"/>
+  <line class="wire" x1="150" y1="410" x2="150" y2="440"/>
+  <use id="topR" href="#resSym"/>
+  <use id="topL" href="#ldrSym"/>
+  <use id="botR" href="#resSym" y="160"/>
+  <use id="botL" href="#ldrSym" y="160"/>
+  <text id="topName" class="th" x="198" y="214">Top: LDR</text>
+  <text id="topValTxt" class="ts" x="198" y="232">0 Ω</text>
+  <text id="botName" class="th" x="198" y="374">Bottom: resistor</text>
+  <text id="botValTxt" class="ts" x="198" y="392">0 Ω</text>
+  <circle cx="150" cy="300" r="4.5" fill="var(--t)"/>
+  <text id="vdivTxt" class="big" x="160" y="284">Vdiv = 0.00 V</text>
+
+  <!-- base resistor and base wire -->
+  <line class="wire wb" x1="150" y1="300" x2="220" y2="300"/>
+  <rect class="part" x="220" y="292" width="56" height="16" rx="2"/>
+  <text class="ts" x="248" y="328" text-anchor="middle">Rb 1 kΩ</text>
+  <line class="wire wb" x1="276" y1="300" x2="388" y2="300"/>
+  <text id="ibTxt" class="ts" x="322" y="346" text-anchor="middle">Ib = 0 µA</text>
+
+  <!-- collector side -->
+  <line class="wire wc" x1="420" y1="38" x2="420" y2="72"/>
+  <rect class="part" x="412" y="72" width="16" height="50" rx="2"/>
+  <text class="ts" x="440" y="102">Rc 330 Ω</text>
+  <line class="wire wc" x1="420" y1="122" x2="420" y2="158"/>
+  <circle id="glow2" cx="420" cy="171" r="46" fill="var(--led)" opacity="0"/>
+  <circle id="glow1" cx="420" cy="171" r="22" fill="var(--led)" opacity="0"/>
+  <polygon id="ledbody" points="408,158 432,158 420,184" fill="var(--led)" fill-opacity="0.2" stroke="var(--t)" stroke-width="1.5"/>
+  <line class="part" x1="407" y1="185" x2="433" y2="185"/>
+  <g id="rays" opacity="0" stroke="var(--led)" stroke-width="1.8" fill="none" stroke-linecap="round">
+    <line x1="440" y1="156" x2="458" y2="138"/><polyline points="450,138 458,138 458,146"/>
+    <line x1="448" y1="170" x2="466" y2="152"/><polyline points="458,152 466,152 466,160"/>
+  </g>
+  <text class="ts" x="394" y="176" text-anchor="end">LED</text>
+  <line class="wire wc" x1="420" y1="185" x2="420" y2="258"/>
+  <text id="icTxt" class="ts" x="436" y="232">Ic = 0 mA</text>
+
+  <!-- transistor -->
+  <circle class="part" cx="410" cy="300" r="46"/>
+  <line class="part" x1="388" y1="274" x2="388" y2="326" style="stroke-width:3"/>
+  <line class="wire wc" x1="388" y1="288" x2="420" y2="258"/>
+  <line class="wire wc" x1="388" y1="312" x2="420" y2="342"/>
+  <polygon points="418,340 405.8,335.5 412.6,328.2" fill="var(--t)"/>
+  <line class="wire wc" x1="420" y1="342" x2="420" y2="440"/>
+  <text class="ts" x="430" y="250">C</text>
+  <text class="ts" x="430" y="360">E</text>
+  <text class="ts" x="356" y="292" text-anchor="end">B</text>
+</svg>
+
+<div class="panel">
+  <h3>1. Build the divider</h3>
+  <div class="btns" style="margin-bottom:10px">
+    <button id="btnLight" type="button">Preset: light sensor</button>
+    <button id="btnDark" type="button">Preset: dark sensor</button>
+  </div>
+  <div class="row">
+    <div class="field"><label for="topType">Top position</label>
+      <select id="topType"><option value="ldr">LDR</option><option value="fixed">Fixed resistor</option></select>
+      <select id="topVal" aria-label="Top fixed resistor value"></select></div>
+    <div class="field"><label for="botType">Bottom position</label>
+      <select id="botType"><option value="fixed">Fixed resistor</option><option value="ldr">LDR</option></select>
+      <select id="botVal" aria-label="Bottom fixed resistor value"></select></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h3>2. Change the light level</h3>
+  <div class="row">
+    <div class="field"><label for="lux">Light level</label>
+      <input id="lux" type="range" min="0" max="100" step="1" value="10"> <output id="luxOut" for="lux">1 lux</output></div>
+    <div class="btns">
+      <button id="qDark" type="button">Dark</button>
+      <button id="qDim" type="button">Dim room</button>
+      <button id="qBright" type="button">Bright</button>
+    </div>
+  </div>
+  <p id="luxDesc" class="ts" style="margin-top:6px"></p>
+</div>
+
+<div class="state" aria-live="polite">
+  <span id="badge" class="badge off">OFF</span>
+  <p id="expl"></p>
+</div>
+
+<div class="panel">
+  <h3>What this circuit does</h3>
+  <p><span id="cfgBadge" class="badge cfg">LIGHT SENSOR</span> <span id="cfgTxt"></span></p>
+  <p id="howTxt"></p>
+  <p>Divider: <span id="calc" class="calc"></span></p>
+</div>
+
+<div class="readouts">
+  <div class="rd"><span>Light level</span><b id="rLux">1 lux</b></div>
+  <div class="rd"><span>LDR resistance</span><b id="rLdr">-</b></div>
+  <div class="rd"><span>Vdiv (no load)</span><b id="rV">0.00 V</b></div>
+  <div class="rd"><span>Base current, Ib</span><b id="rIb">0 µA</b></div>
+  <div class="rd"><span>Collector current, Ic</span><b id="rIc">0.0 mA</b></div>
+  <div class="rd"><span>LED brightness</span><b id="rLed">0%</b></div>
+</div>
+
+<h2>Divider output against light level</h2>
+<svg id="chart" viewBox="0 0 680 260" role="img" aria-label="Graph of divider output voltage against light level on a log scale, with regions showing when the LED is off, partly on and fully on"></svg>
+<div class="legend">
+  <span><i style="background:var(--off-f)"></i>LED off</span>
+  <span><i style="background:var(--act-f)"></i>LED partly on</span>
+  <span><i style="background:var(--sat-f)"></i>LED fully on</span>
+</div>
+
+<h2>Try this</h2>
+<details><summary>1. Use the light sensor preset and raise the light slowly from dark. What happens to the LDR resistance and to Vdiv, and why does the LED switch on?</summary>
+<p>The LDR's resistance falls as the light gets brighter. With the LDR on top, the bottom resistor then takes a larger share of the 5 V, so Vdiv rises. Once Vdiv passes about 0.7 V, current flows into the base and the transistor switches the LED on.</p></details>
+<details><summary>2. Swap to the dark sensor preset (LDR on the bottom). Explain why the behaviour reverses.</summary>
+<p>Now the LDR is the bottom resistor, so its share of the 5 V is Vdiv. In bright light its resistance is low, so Vdiv is small and the transistor stays off. In the dark its resistance is high, so it takes most of the 5 V, Vdiv rises, and the LED switches on.</p></details>
+<details><summary>3. Dark sensor: you want the LED to come on when the light drops below about 40 lux. Which fixed resistor works best? Which way does the switching point move when you increase the resistor?</summary>
+<p>About 22 kΩ gives half brightness at roughly 40 lux. A bigger fixed resistor moves the switching point to darker conditions, because the LDR must reach a higher resistance to take enough of the 5 V. A smaller resistor makes the LED come on sooner, in brighter light.</p></details>
+<details><summary>4. Put a fixed resistor in both positions with the same value. What is Vdiv, and does the light level matter?</summary>
+<p>Vdiv is half the supply, 2.5 V, and the light level makes no difference because there is no LDR in the circuit. A divider with two equal resistors always gives half the input voltage.</p></details>
+<details><summary>5. Dark sensor with a 100 kΩ fixed resistor: the LED never gets fully bright. Why?</summary>
+<p>Even in the dark the divider output only reaches about 4.3 V, and the large divider resistances limit the base current. The base current then only allows about half of the maximum collector current, so the transistor never saturates. A smaller fixed resistor supplies more base current.</p></details>
+
+<p class="note">Simplified model: the LDR is modelled as 15 kΩ at 10 lux, rising as it gets darker (real LDRs vary a lot). Transistor gain of 100, Vbe of 0.7 V, red LED drop of 2 V, Vce(sat) of 0.2 V. A 1 kΩ resistor sits between the divider and the base.</p>
+</div>
+
+<script>
+(function(){
+  var VCC=5, RC=330, VF=2.0, VCES=0.2, VBE=0.7, BETA=100, RBASE=1000;
+  var ICMAX=(VCC-VF-VCES)/RC;
+  var VALUES=[1000,4700,10000,22000,47000,100000];
+  var $=function(id){return document.getElementById(id);};
+
+  var topType=$('topType'), botType=$('botType'), topVal=$('topVal'), botVal=$('botVal'), luxEl=$('lux');
+
+  function fmtR(r){
+    var s;
+    if(r>=1e6) s=(r/1e6).toFixed(2)+' MΩ';
+    else if(r>=1e3) s=(r/1e3).toFixed(r>=1e5?0:1)+' kΩ';
+    else s=Math.round(r)+' Ω';
+    return s.replace('.0 ',' ');
+  }
+  function fmtI(a){ if(a<=0) return '0 µA'; if(a<0.001) return (a*1e6).toFixed(0)+' µA'; return (a*1000).toFixed(a<0.01?2:1)+' mA'; }
+  function fmtLux(l){ if(l<1) return l.toFixed(2)+' lux'; if(l<10) return l.toFixed(1)+' lux'; return Math.round(l)+' lux'; }
+  function sliderToLux(s){ return 0.1*Math.pow(10,s/25); }
+  function luxToSlider(l){ return Math.round(25*Math.log(l/0.1)/Math.LN10); }
+  function ldrR(l){ return 15000*Math.pow(10/l,0.8); }
+
+  VALUES.forEach(function(v){
+    [topVal,botVal].forEach(function(sel){var o=document.createElement('option');o.value=v;o.textContent=fmtR(v);sel.appendChild(o);});
+  });
+  topVal.value=10000; botVal.value=10000;
+
+  function slots(){
+    return {top:{type:topType.value,val:parseFloat(topVal.value)}, bot:{type:botType.value,val:parseFloat(botVal.value)}};
+  }
+  function rOf(s,l){ return s.type==='ldr'?ldrR(l):s.val; }
+
+  function model(S,l){
+    var rt=rOf(S.top,l), rb=rOf(S.bot,l);
+    var v=VCC*rb/(rt+rb), rth=rt*rb/(rt+rb), r={rt:rt,rb:rb,vdiv:v};
+    if(v<=VBE){r.state='off';r.ib=0;r.ic=0;r.icw=0;return r;}
+    var ib=(v-VBE)/(rth+RBASE), icw=BETA*ib;
+    r.ib=ib; r.icw=icw;
+    if(icw>=ICMAX){r.state='sat';r.ic=ICMAX;} else {r.state='act';r.ic=icw;}
+    return r;
+  }
+
+  function lux50(S){
+    var prev=null,i,l,b,N=600;
+    for(i=0;i<=N;i++){
+      l=0.1*Math.pow(10,4*i/N); b=model(S,l).ic/ICMAX;
+      if(prev!==null && (prev-0.5)*(b-0.5)<=0 && prev!==b){return l;}
+      prev=b;
+    }
+    return null;
+  }
+
+  function luxWord(l){
+    if(l<1) return 'Dark, like a closed cupboard or a moonlit night.';
+    if(l<10) return 'Very dim, like a room lit by a night light.';
+    if(l<100) return 'Dim, like a room at dusk.';
+    if(l<500) return 'Normal room lighting.';
+    return 'Bright, like a window on a sunny day or outdoors.';
+  }
+
+  var TEXT={
+    off:{b:'LED OFF',c:'off',t:'Vdiv is below about 0.7 V, so no current flows into the base. With no base current there is no collector current, and the LED stays off.'},
+    act:{b:'LED PARTLY ON',c:'act',t:'Vdiv is just above 0.7 V. A small base current flows, and the collector current is about 100 times that. The LED is only partly bright.'},
+    sat:{b:'LED FULLY ON',c:'sat',t:'Vdiv is high enough to give plenty of base current, so the transistor is saturated and the LED and resistor set the current.'}
+  };
+
+  function drawChart(S,l,m){
+    var X0=60,X1=640,Y0=210,Y1=30,N=240,i,s='';
+    function xs(x){return X0+((Math.log(x)/Math.LN10+1)/4)*(X1-X0);}
+    function ys(v){return Y0-(v/5)*(Y0-Y1);}
+    var colour={off:'var(--off-f)',act:'var(--act-f)',sat:'var(--sat-f)'};
+    var runStart=0,runState=model(S,0.1).state,st,xa,xb;
+    for(i=1;i<=N+1;i++){
+      st=i<=N?model(S,0.1*Math.pow(10,4*i/N)).state:null;
+      if(st!==runState){
+        xa=X0+(runStart/N)*(X1-X0); xb=X0+(Math.min(i,N)/N)*(X1-X0);
+        s+='<rect x="'+xa.toFixed(1)+'" y="'+Y1+'" width="'+(xb-xa+0.5).toFixed(1)+'" height="'+(Y0-Y1)+'" fill="'+colour[runState]+'"/>';
+        runStart=i; runState=st;
+      }
+    }
+    var v;
+    for(v=0;v<=5;v++){
+      s+='<line x1="'+X0+'" y1="'+ys(v)+'" x2="'+X1+'" y2="'+ys(v)+'" stroke="var(--bd)" stroke-width="0.6"/>';
+      s+='<text class="ts" x="'+(X0-8)+'" y="'+(ys(v)+4)+'" text-anchor="end">'+v+'</text>';
+    }
+    var ticks=[0.1,1,10,100,1000];
+    ticks.forEach(function(x){
+      s+='<line x1="'+xs(x)+'" y1="'+Y0+'" x2="'+xs(x)+'" y2="'+(Y0+5)+'" stroke="var(--ts)" stroke-width="1"/>';
+      s+='<text class="ts" x="'+xs(x)+'" y="'+(Y0+19)+'" text-anchor="middle">'+x+'</text>';
+    });
+    s+='<line x1="'+X0+'" y1="'+Y0+'" x2="'+X1+'" y2="'+Y0+'" stroke="var(--ts)" stroke-width="1.2"/>';
+    s+='<line x1="'+X0+'" y1="'+Y1+'" x2="'+X0+'" y2="'+Y0+'" stroke="var(--ts)" stroke-width="1.2"/>';
+    s+='<line x1="'+X0+'" y1="'+ys(VBE)+'" x2="'+X1+'" y2="'+ys(VBE)+'" stroke="var(--ts)" stroke-width="1" stroke-dasharray="5 4"/>';
+    s+='<text class="ts" x="'+(X1-4)+'" y="'+(ys(VBE)-6)+'" text-anchor="end">about 0.7 V: transistor starts to turn on</text>';
+    var pts=[],lx;
+    for(i=0;i<=N;i++){lx=0.1*Math.pow(10,4*i/N);pts.push(xs(lx).toFixed(1)+','+ys(model(S,lx).vdiv).toFixed(1));}
+    s+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--navy)" stroke-width="2.5" stroke-linejoin="round"/>';
+    s+='<circle cx="'+xs(l)+'" cy="'+ys(m.vdiv)+'" r="7" fill="var(--light)" stroke="var(--bg)" stroke-width="2"/>';
+    s+='<text class="ts" x="'+((X0+X1)/2)+'" y="254" text-anchor="middle">Light level (lux, log scale)</text>';
+    s+='<text class="ts" x="16" y="'+((Y0+Y1)/2)+'" text-anchor="middle" transform="rotate(-90 16 '+((Y0+Y1)/2)+')">Vdiv (V)</text>';
+    $('chart').innerHTML=s;
+  }
+
+  function renderAll(){
+    var S=slots(), l=sliderToLux(parseFloat(luxEl.value)), m=model(S,l), b=m.ic/ICMAX;
+    var hasLdr=(S.top.type==='ldr'||S.bot.type==='ldr');
+
+    topVal.disabled=(S.top.type==='ldr'); botVal.disabled=(S.bot.type==='ldr');
+
+    function show(id,on){ if(on) $(id).removeAttribute('display'); else $(id).setAttribute('display','none'); }
+    show('topR',S.top.type==='fixed'); show('topL',S.top.type==='ldr');
+    show('botR',S.bot.type==='fixed'); show('botL',S.bot.type==='ldr');
+    $('topName').textContent='Top: '+(S.top.type==='ldr'?'LDR':'resistor');
+    $('botName').textContent='Bottom: '+(S.bot.type==='ldr'?'LDR':'resistor');
+    $('topValTxt').textContent=fmtR(m.rt);
+    $('botValTxt').textContent=fmtR(m.rb);
+    $('vdivTxt').textContent='Vdiv = '+m.vdiv.toFixed(2)+' V';
+    $('ibTxt').textContent='Ib = '+fmtI(m.ib);
+    $('icTxt').textContent='Ic = '+(m.ic*1000).toFixed(1)+' mA';
+
+    var lv=(Math.log(l)/Math.LN10+1)/4;
+    $('arrows').setAttribute('opacity',(0.15+0.85*lv).toFixed(2));
+
+    $('luxOut').textContent=fmtLux(l);
+    $('luxDesc').textContent=luxWord(l);
+    $('rLux').textContent=fmtLux(l);
+    $('rLdr').textContent=hasLdr?fmtR(ldrR(l)):'no LDR';
+    $('rV').textContent=m.vdiv.toFixed(2)+' V';
+    $('rIb').textContent=fmtI(m.ib);
+    $('rIc').textContent=(m.ic*1000).toFixed(1)+' mA';
+    $('rLed').textContent=Math.round(b*100)+'%';
+
+    var T=TEXT[m.state], bd=$('badge'); bd.textContent=T.b; bd.className='badge '+T.c;
+    $('expl').textContent=T.t;
+
+    $('glow1').setAttribute('opacity',(0.85*b).toFixed(3));
+    $('glow2').setAttribute('opacity',(0.3*b).toFixed(3));
+    $('ledbody').setAttribute('fill-opacity',(0.2+0.8*b).toFixed(3));
+    $('rays').setAttribute('opacity',b.toFixed(3));
+
+    var wcs=document.querySelectorAll('#ckt .wc'), wbs=document.querySelectorAll('#ckt .wb'), i;
+    for(i=0;i<wcs.length;i++){wcs[i].style.stroke=m.ic>0?'var(--teal)':'var(--t)';wcs[i].style.strokeWidth=m.ic>0?'3':'1.5';}
+    for(i=0;i<wbs.length;i++){wbs[i].style.stroke=m.ib>0?'var(--amber)':'var(--t)';wbs[i].style.strokeWidth=m.ib>0?'3':'1.5';}
+
+    // configuration summary
+    var bDark=model(S,0.1).ic/ICMAX, bBright=model(S,1000).ic/ICMAX, cb=$('cfgBadge'), txt, how;
+    if(Math.abs(bBright-bDark)<0.1){
+      cb.textContent='NOT LIGHT SENSITIVE';
+      if(!hasLdr) txt='There is no LDR in the circuit, so the light level has no effect.';
+      else if(S.top.type==='ldr'&&S.bot.type==='ldr') txt='Both positions are LDRs, so they change together and Vdiv stays at 2.5 V.';
+      else txt='The LED looks the same in dark and bright light. Try a different fixed resistor value.';
+    } else {
+      var t50=lux50(S), dir=bBright>bDark;
+      cb.textContent=dir?'LIGHT SENSOR':'DARK SENSOR';
+      txt=(dir?'The LED gets brighter as the light increases. ':'The LED gets brighter as the light decreases. ')+
+          (t50===null?'It never reaches 50% brightness.':'It passes 50% brightness at about '+fmtLux(t50)+'.');
+      if(S.top.type==='ldr'&&S.bot.type==='ldr') txt+=' Vdiv stays at 2.5 V, but lower resistances let more base current flow, so the LED still responds.';
+    }
+    $('cfgTxt').textContent=txt;
+    if(S.top.type==='ldr'&&S.bot.type==='fixed') how='The LDR is the top resistor. More light lowers its resistance, so the bottom resistor takes a bigger share of the 5 V and Vdiv rises.';
+    else if(S.top.type==='fixed'&&S.bot.type==='ldr') how='The LDR is the bottom resistor. More light lowers its resistance, so it takes a smaller share of the 5 V and Vdiv falls. Darkness raises its resistance, so Vdiv rises.';
+    else how='Vdiv depends only on the ratio of the two resistances: Vdiv = 5 V × bottom ÷ (top + bottom).';
+    $('howTxt').textContent=how;
+    $('calc').textContent='Vdiv = 5 V × '+fmtR(m.rb)+' ÷ ('+fmtR(m.rt)+' + '+fmtR(m.rb)+') = '+m.vdiv.toFixed(2)+' V';
+
+    drawChart(S,l,m);
+  }
+
+  function setPreset(topT,botT){topType.value=topT;botType.value=botT;renderAll();}
+  $('btnLight').addEventListener('click',function(){topVal.value=10000;botVal.value=10000;setPreset('ldr','fixed');});
+  $('btnDark').addEventListener('click',function(){topVal.value=10000;botVal.value=10000;setPreset('fixed','ldr');});
+  [topType,botType,topVal,botVal].forEach(function(e){e.addEventListener('change',renderAll);});
+  luxEl.addEventListener('input',renderAll);
+  $('qDark').addEventListener('click',function(){luxEl.value=0;renderAll();});
+  $('qDim').addEventListener('click',function(){luxEl.value=luxToSlider(30);renderAll();});
+  $('qBright').addEventListener('click',function(){luxEl.value=100;renderAll();});
+  renderAll();
+})();
+</script>
+</body>
+</html>

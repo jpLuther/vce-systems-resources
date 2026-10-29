@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NPN transistor as a switch</title>
+<style>
+:root{--bg:#fff;--card:#f4f6f9;--t:#1f2a37;--ts:#5b6573;--bd:#c9d0da;--navy:#1F3A5F;--teal:#1B7F8C;--amber:#B7791F;--led:#E24B4A;
+--off-f:#E9EBEE;--act-f:#FBEBCB;--sat-f:#E1F0D5;--off-t:#444b55;--act-t:#6B4A00;--sat-t:#27500A}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1f24;--card:#262b33;--t:#e8eaed;--ts:#a8b0bb;--bd:#424955;--navy:#8fb4e3;--teal:#5cc2cf;--amber:#e0a94c;--led:#ff6b66;
+--off-f:#2f343b;--act-f:#4a3410;--sat-f:#24400f;--off-t:#c5cad2;--act-t:#f3d49a;--sat-t:#c0dd97}}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,"Segoe UI",Calibri,Arial,sans-serif;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px;color:var(--navy)}
+h2{font-size:17px;margin:26px 0 8px;color:var(--navy);padding-bottom:4px;border-bottom:2px solid var(--teal)}
+p.sub{margin:0 0 12px;color:var(--ts)}
+svg{width:100%;height:auto;display:block}
+svg text{font-family:inherit}
+.t{font-size:14px;fill:var(--t)}.ts{font-size:12px;fill:var(--ts)}.th{font-size:14px;font-weight:600;fill:var(--t)}.big{font-size:18px;font-weight:600;fill:var(--navy)}
+.wire{stroke:var(--t);stroke-width:1.5;fill:none;stroke-linecap:round}
+.part{stroke:var(--t);stroke-width:1.5;fill:none}
+.controls{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-top:6px}
+.controls label{font-size:14px;font-weight:600}
+.controls input[type=range]{width:220px;accent-color:var(--teal)}
+.controls output{display:inline-block;min-width:3.5em;font-variant-numeric:tabular-nums}
+button,select{font:inherit;font-size:14px;padding:7px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--t);cursor:pointer}
+button:hover,select:hover{border-color:var(--teal)}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.state{display:flex;gap:12px;align-items:flex-start;margin:14px 0}
+.badge{flex:none;padding:6px 12px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap}
+.badge.off{background:var(--off-f);color:var(--off-t);border:1px solid var(--bd)}
+.badge.act{background:var(--act-f);color:var(--act-t);border:1px solid var(--amber)}
+.badge.sat{background:var(--sat-f);color:var(--sat-t);border:1px solid #3B6D11}
+#expl{margin:0;font-size:15px}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px}
+.rd{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
+.rd span{display:block;font-size:12px;color:var(--ts)}
+.rd b{font-size:17px;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--ts);margin-top:4px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px;border:1px solid var(--bd)}
+details{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;margin:8px 0}
+summary{cursor:pointer;font-weight:600}
+details p{margin:8px 0 0;font-size:15px}
+.note{font-size:13px;color:var(--ts);margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>NPN transistor as a switch</h1>
+<p class="sub">Change the input voltage and watch the LED, the currents and the state of the transistor.</p>
+
+<svg id="ckt" viewBox="0 0 680 400" role="img" aria-label="Circuit: 5 volt supply, collector resistor, LED, NPN transistor to ground. A base resistor connects the input voltage to the transistor base.">
+  <!-- supply -->
+  <text class="th" x="420" y="28" text-anchor="middle">+5 V</text>
+  <line class="wire" x1="380" y1="38" x2="460" y2="38"/>
+  <line class="wire wc" x1="420" y1="38" x2="420" y2="72"/>
+  <!-- collector resistor -->
+  <rect class="part" x="412" y="72" width="16" height="50" rx="2"/>
+  <text class="ts" x="440" y="102">Rc 330 Ω</text>
+  <line class="wire wc" x1="420" y1="122" x2="420" y2="158"/>
+  <!-- LED -->
+  <circle id="glow2" cx="420" cy="171" r="46" fill="var(--led)" opacity="0"/>
+  <circle id="glow1" cx="420" cy="171" r="22" fill="var(--led)" opacity="0"/>
+  <polygon id="ledbody" points="408,158 432,158 420,184" fill="var(--led)" fill-opacity="0.2" stroke="var(--t)" stroke-width="1.5"/>
+  <line class="part" x1="407" y1="185" x2="433" y2="185"/>
+  <g id="rays" opacity="0" stroke="var(--led)" stroke-width="1.8" fill="none" stroke-linecap="round">
+    <line x1="440" y1="156" x2="458" y2="138"/><polyline points="450,138 458,138 458,146"/>
+    <line x1="448" y1="170" x2="466" y2="152"/><polyline points="458,152 466,152 466,160"/>
+  </g>
+  <text class="ts" x="394" y="176" text-anchor="end">LED</text>
+  <line class="wire wc" x1="420" y1="185" x2="420" y2="258"/>
+  <text id="icTxt" class="ts" x="436" y="232">Ic = 0 mA</text>
+  <!-- transistor -->
+  <circle class="part" cx="410" cy="300" r="46"/>
+  <line class="part" x1="388" y1="274" x2="388" y2="326" style="stroke-width:3"/>
+  <line class="wire wc" x1="388" y1="288" x2="420" y2="258"/>
+  <line class="wire wc" x1="388" y1="312" x2="420" y2="342"/>
+  <polygon points="418,340 405.8,335.5 412.6,328.2" fill="var(--t)"/>
+  <line class="wire wc" x1="420" y1="342" x2="420" y2="372"/>
+  <text class="ts" x="430" y="250">C</text>
+  <text class="ts" x="430" y="360">E</text>
+  <text class="ts" x="356" y="292" text-anchor="end">B</text>
+  <!-- ground -->
+  <line class="wire" x1="404" y1="374" x2="436" y2="374"/>
+  <line class="wire" x1="410" y1="380" x2="430" y2="380"/>
+  <line class="wire" x1="416" y1="386" x2="424" y2="386"/>
+  <text class="ts" x="448" y="382">GND (0 V)</text>
+  <!-- base side -->
+  <circle cx="120" cy="300" r="5" fill="var(--t)"/>
+  <text id="vinTxt" class="big" x="120" y="274" text-anchor="middle">0.0 V</text>
+  <text class="ts" x="120" y="326" text-anchor="middle">Vin</text>
+  <line class="wire wb" x1="125" y1="300" x2="190" y2="300"/>
+  <rect class="part" x="190" y="292" width="56" height="16" rx="2"/>
+  <text id="rbTxt" class="ts" x="218" y="282" text-anchor="middle">Rb 10 kΩ</text>
+  <line class="wire wb" x1="246" y1="300" x2="388" y2="300"/>
+  <text id="ibTxt" class="ts" x="318" y="322" text-anchor="middle">Ib = 0 µA</text>
+</svg>
+
+<div class="controls">
+  <div><label for="vin">Input voltage (Vin)</label><br>
+    <input id="vin" type="range" min="0" max="5" step="0.05" value="0"> <output id="vinOut" for="vin">0.00 V</output></div>
+  <div><button id="btnOff" type="button">Switch OFF (0 V)</button> <button id="btnOn" type="button">Switch ON (5 V)</button></div>
+  <div><label for="rb">Base resistor (Rb)</label><br>
+    <select id="rb"><option value="1000">1 kΩ</option><option value="10000" selected>10 kΩ</option><option value="100000">100 kΩ</option></select></div>
+</div>
+
+<div class="state" aria-live="polite">
+  <span id="badge" class="badge off">OFF</span>
+  <p id="expl"></p>
+</div>
+
+<div class="readouts">
+  <div class="rd"><span>Input, Vin</span><b id="rVin">0.00 V</b></div>
+  <div class="rd"><span>Base-emitter, Vbe</span><b id="rVbe">0.00 V</b></div>
+  <div class="rd"><span>Base current, Ib</span><b id="rIb">0 µA</b></div>
+  <div class="rd"><span>Collector current, Ic</span><b id="rIc">0.0 mA</b></div>
+  <div class="rd"><span>Across transistor, Vce</span><b id="rVce">5.00 V</b></div>
+  <div class="rd"><span>LED brightness</span><b id="rLed">0%</b></div>
+</div>
+
+<h2>Collector current against input voltage</h2>
+<svg id="chart" viewBox="0 0 680 250" role="img" aria-label="Graph of collector current against input voltage with regions for off, partly on and fully on"></svg>
+<div class="legend">
+  <span><i style="background:var(--off-f)"></i>Off (cut-off)</span>
+  <span><i style="background:var(--act-f)"></i>Partly on (active)</span>
+  <span><i style="background:var(--sat-f)"></i>Fully on (saturated)</span>
+</div>
+
+<h2>Try this</h2>
+<details><summary>1. Raise Vin slowly from 0 V. At about what voltage does the LED start to glow, and why?</summary>
+<p>At about 0.7 V. The base-emitter junction behaves like a diode and needs roughly 0.7 V before any current flows into the base. Below that there is no base current, so no collector current.</p></details>
+<details><summary>2. Set Vin to 5 V with Rb = 10 kΩ. What limits the collector current?</summary>
+<p>The LED and collector resistor limit it, not the transistor: (5 V − 2 V − 0.2 V) ÷ 330 Ω is about 8.5 mA. The base current is large enough that the transistor could pass far more, so it is fully on (saturated).</p></details>
+<details><summary>3. Change Rb to 100 kΩ with Vin at 5 V. Why is the LED dimmer?</summary>
+<p>The base current drops to about 43 µA, so the collector current is only about 100 × 43 µA = 4.3 mA. That is less than the 8.5 mA the circuit allows, so the transistor stays in its active region and does not switch fully on. The base resistor is too large for a switch.</p></details>
+<details><summary>4. Why might a microcontroller use a transistor like this to drive a load?</summary>
+<p>A microcontroller pin can only supply a small current. A small base current from the pin can control a much larger collector current drawn from a separate supply, which is enough to run a bigger LED, a relay or a small motor.</p></details>
+
+<p class="note">Simplified model using typical values: gain (β) of 100, Vbe of 0.7 V, red LED drop of 2 V, Vce(sat) of 0.2 V. Real parts vary.</p>
+</div>
+
+<script>
+(function(){
+  var VCC=5, RC=330, VF=2.0, VCES=0.2, VBE=0.7, BETA=100;
+  var ICMAX=(VCC-VF-VCES)/RC;
+
+  var $=function(id){return document.getElementById(id);};
+  var vinEl=$('vin'), rbEl=$('rb');
+
+  function model(vin,rb){
+    if(vin<=VBE){return {state:'off',ib:0,ic:0,vbe:vin,vce:VCC,icw:0};}
+    var ib=(vin-VBE)/rb, icw=BETA*ib;
+    if(icw>=ICMAX){return {state:'sat',ib:ib,ic:ICMAX,vbe:VBE,vce:VCES,icw:icw};}
+    return {state:'act',ib:ib,ic:icw,vbe:VBE,vce:VCC-VF-icw*RC,icw:icw};
+  }
+  function fmtI(a){ if(a<=0) return '0 µA'; if(a<0.001) return (a*1e6).toFixed(0)+' µA'; return (a*1000).toFixed(a<0.01?2:1)+' mA'; }
+  function fmtIc(a){ return (a*1000).toFixed(1)+' mA'; }
+  function fmtR(r){ return r>=1000? (r/1000)+' kΩ' : r+' Ω'; }
+
+  var TEXT={
+    off:{badge:'OFF',cls:'off',txt:'Cut-off. Vin is below about 0.7 V, so no current flows into the base. With no base current there is no collector current and the LED stays off. The transistor acts like an open switch.'},
+    act:{badge:'PARTLY ON',cls:'act',txt:'Active region. Some base current flows, and the collector current is about 100 times the base current. The LED is only partly bright. A switch should not stay in this region.'},
+    sat:{badge:'FULLY ON',cls:'sat',txt:'Saturation. There is plenty of base current, so the transistor no longer limits the collector current. The LED and resistor do. The transistor acts like a closed switch with only about 0.2 V across it.'}
+  };
+
+  function drawChart(rb,vin,m){
+    var X0=60,X1=640,Y0=200,Y1=30;
+    function xs(v){return X0+(v/5)*(X1-X0);}
+    function ys(i){return Y0-(i/10)*(Y0-Y1);}
+    var vsat=VBE+rb*ICMAX/BETA;
+    var s='';
+    s+='<rect x="'+xs(0)+'" y="'+Y1+'" width="'+(xs(VBE)-xs(0))+'" height="'+(Y0-Y1)+'" fill="var(--off-f)"/>';
+    var aEnd=Math.min(vsat,5);
+    s+='<rect x="'+xs(VBE)+'" y="'+Y1+'" width="'+(xs(aEnd)-xs(VBE))+'" height="'+(Y0-Y1)+'" fill="var(--act-f)"/>';
+    if(vsat<5){s+='<rect x="'+xs(vsat)+'" y="'+Y1+'" width="'+(xs(5)-xs(vsat))+'" height="'+(Y0-Y1)+'" fill="var(--sat-f)"/>';}
+    var i,g;
+    for(i=0;i<=10;i+=2){
+      s+='<line x1="'+X0+'" y1="'+ys(i)+'" x2="'+X1+'" y2="'+ys(i)+'" stroke="var(--bd)" stroke-width="0.6"/>';
+      s+='<text class="ts" x="'+(X0-8)+'" y="'+(ys(i)+4)+'" text-anchor="end">'+i+'</text>';
+    }
+    for(i=0;i<=5;i++){
+      s+='<line x1="'+xs(i)+'" y1="'+Y0+'" x2="'+xs(i)+'" y2="'+(Y0+5)+'" stroke="var(--ts)" stroke-width="1"/>';
+      s+='<text class="ts" x="'+xs(i)+'" y="'+(Y0+19)+'" text-anchor="middle">'+i+'</text>';
+    }
+    s+='<line x1="'+X0+'" y1="'+Y0+'" x2="'+X1+'" y2="'+Y0+'" stroke="var(--ts)" stroke-width="1.2"/>';
+    s+='<line x1="'+X0+'" y1="'+Y1+'" x2="'+X0+'" y2="'+Y0+'" stroke="var(--ts)" stroke-width="1.2"/>';
+    s+='<line x1="'+X0+'" y1="'+ys(ICMAX*1000)+'" x2="'+X1+'" y2="'+ys(ICMAX*1000)+'" stroke="var(--ts)" stroke-width="1" stroke-dasharray="5 4"/>';
+    s+='<text class="ts" x="'+(X1-4)+'" y="'+(ys(ICMAX*1000)-6)+'" text-anchor="end">limit set by LED and Rc: '+(ICMAX*1000).toFixed(1)+' mA</text>';
+    var pts=[],v,mm;
+    for(v=0;v<=5.0001;v+=0.02){mm=model(v,rb);pts.push(xs(v).toFixed(1)+','+ys(mm.ic*1000).toFixed(1));}
+    s+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--navy)" stroke-width="2.5" stroke-linejoin="round"/>';
+    s+='<circle cx="'+xs(vin)+'" cy="'+ys(m.ic*1000)+'" r="7" fill="var(--led)" stroke="var(--bg)" stroke-width="2"/>';
+    s+='<text class="ts" x="'+((X0+X1)/2)+'" y="244" text-anchor="middle">Input voltage Vin (V)</text>';
+    s+='<text class="ts" x="16" y="'+((Y0+Y1)/2)+'" text-anchor="middle" transform="rotate(-90 16 '+((Y0+Y1)/2)+')">Ic (mA)</text>';
+    $('chart').innerHTML=s;
+  }
+
+  function render(){
+    var vin=parseFloat(vinEl.value), rb=parseFloat(rbEl.value);
+    var m=model(vin,rb), b=m.ic/ICMAX;
+
+    $('vinOut').textContent=vin.toFixed(2)+' V';
+    $('vinTxt').textContent=vin.toFixed(1)+' V';
+    $('rbTxt').textContent='Rb '+fmtR(rb);
+    $('ibTxt').textContent='Ib = '+fmtI(m.ib);
+    $('icTxt').textContent='Ic = '+fmtIc(m.ic);
+
+    $('rVin').textContent=vin.toFixed(2)+' V';
+    $('rVbe').textContent=m.vbe.toFixed(2)+' V';
+    $('rIb').textContent=fmtI(m.ib);
+    $('rIc').textContent=fmtIc(m.ic);
+    $('rVce').textContent=m.vce.toFixed(2)+' V';
+    $('rLed').textContent=Math.round(b*100)+'%';
+
+    var T=TEXT[m.state];
+    var bd=$('badge'); bd.textContent=T.badge; bd.className='badge '+T.cls;
+    var extra='';
+    if(m.state==='sat'){extra=' Gain × Ib would be '+(m.icw*1000).toFixed(1)+' mA, but only '+(m.ic*1000).toFixed(1)+' mA can flow.';}
+    if(m.state==='act'){extra=' Ic = 100 × '+fmtI(m.ib)+' = '+(m.icw*1000).toFixed(1)+' mA.';}
+    $('expl').textContent=T.txt+extra;
+
+    $('glow1').setAttribute('opacity',(0.85*b).toFixed(3));
+    $('glow2').setAttribute('opacity',(0.3*b).toFixed(3));
+    $('ledbody').setAttribute('fill-opacity',(0.2+0.8*b).toFixed(3));
+    $('rays').setAttribute('opacity',b.toFixed(3));
+
+    var wcs=document.querySelectorAll('.wc'), wbs=document.querySelectorAll('.wb'), i;
+    for(i=0;i<wcs.length;i++){
+      wcs[i].style.stroke=m.ic>0?'var(--teal)':'var(--t)';
+      wcs[i].style.strokeWidth=m.ic>0?'3':'1.5';
+    }
+    for(i=0;i<wbs.length;i++){
+      wbs[i].style.stroke=m.ib>0?'var(--amber)':'var(--t)';
+      wbs[i].style.strokeWidth=m.ib>0?'3':'1.5';
+    }
+    drawChart(rb,vin,m);
+  }
+
+  vinEl.addEventListener('input',render);
+  rbEl.addEventListener('change',render);
+  $('btnOff').addEventListener('click',function(){vinEl.value=0;render();});
+  $('btnOn').addEventListener('click',function(){vinEl.value=5;render();});
+  render();
+})();
+</script>
+</body>
+</html>

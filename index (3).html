@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classroom demos</title>
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--t:#1f2a37;--ts:#5b6573;--bd:#d6dbe3;--navy:#1F3A5F;--teal:#1B7F8C;--chip:#e8edf4;--chip-on:#1F3A5F;--chip-on-t:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#171a1f;--card:#222730;--t:#e8eaed;--ts:#a8b0bb;--bd:#3a414c;--navy:#8fb4e3;--teal:#5cc2cf;--chip:#2c333d;--chip-on:#5cc2cf;--chip-on-t:#10222a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,"Segoe UI",Calibri,Arial,sans-serif;line-height:1.5}
+header{background:#1F3A5F;color:#fff;padding:28px 20px}
+header h1{margin:0 auto;max-width:960px;font-size:28px;font-weight:600}
+header p{margin:6px auto 0;max-width:960px;color:#bfe3e8;font-size:16px}
+main{max-width:960px;margin:0 auto;padding:20px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px}
+.tools input{flex:1 1 220px;padding:10px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--t);font:inherit}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chip{padding:7px 14px;border:0;border-radius:999px;background:var(--chip);color:var(--t);font:inherit;font-size:14px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-t);font-weight:600}
+.chip:focus-visible,.tools input:focus-visible,.card:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+h2{font-size:18px;color:var(--navy);margin:26px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--teal)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--bd);border-left:5px solid var(--teal);border-radius:10px;padding:14px 16px}
+.card:hover{border-color:var(--teal)}
+.card h3{margin:0 0 4px;font-size:16px;color:var(--navy)}
+.card p{margin:0;font-size:14px;color:var(--ts)}
+.empty{color:var(--ts);padding:20px 0}
+</style>
+</head>
+<body>
+
+<header>
+<h1>Classroom demos</h1>
+<p>Interactive demos to support learning. Choose a topic or search, then click a card to open.</p>
+</header>
+
+<main>
+<div class="tools"><input id="q" type="search" placeholder="Search demos" aria-label="Search demos"></div>
+<div class="chips" id="chips" role="group" aria-label="Filter by category"></div>
+<div id="list"></div>
+</main>
+
+<script>
+/* =====================================================================
+   HOW TO ADD A DEMO
+   1. Upload the demo's .html file to the same folder as this index.html.
+   2. Copy one line below, paste it as a new line inside the list,
+      and change the four values. Keep the quotes and the comma at the end.
+        title       = the name students see
+        file        = the exact file name, e.g. "my-demo.html"
+        category    = the heading it appears under (spelling must match
+                      other entries to share a group)
+        description = one short sentence
+   ===================================================================== */
+var DEMOS = [
+  { title: "Floating input demo",        file: "floating-input-demo.html",       category: "Arduino and electronics", description: "See why an open switch leaves a pin floating, then fix it with a pull-down resistor." },
+  { title: "SPST vs SPDT switch",        file: "spst-vs-spdt-comparison.html",   category: "Arduino and electronics", description: "Compare a two-pin and a three-pin switch wired to the same input." },
+  { title: "NPN transistor as a switch",    file: "npn-transistor-switch.html",     category: "Arduino and electronics", description: "Change the input voltage and see how a transistor switches an LED off, partly on and fully on." },
+  { title: "Light and dark sensor",           file: "voltage-divider-light-sensor.html", category: "Arduino and electronics", description: "Build a voltage divider with an LDR and fixed resistor to make a light or dark sensor that switches an LED." },
+  /* add new demos above this line */
+];
+/* ===================== END OF THE PART YOU EDIT ===================== */
+
+(function(){
+  var chipsEl=document.getElementById('chips'), listEl=document.getElementById('list'), qEl=document.getElementById('q');
+  var active='All';
+  var cats=['All'];
+  DEMOS.forEach(function(d){ if(cats.indexOf(d.category)<0) cats.push(d.category); });
+  var rest=cats.slice(1).sort(); cats=['All'].concat(rest);
+
+  function el(tag,cls,text){var e=document.createElement(tag); if(cls) e.className=cls; if(text!==undefined) e.textContent=text; return e;}
+
+  function drawChips(){
+    chipsEl.innerHTML='';
+    cats.forEach(function(c){
+      var b=el('button','chip',c); b.type='button'; b.setAttribute('aria-pressed',c===active?'true':'false');
+      b.addEventListener('click',function(){active=c;drawChips();drawList();});
+      chipsEl.appendChild(b);
+    });
+  }
+
+  function drawList(){
+    var q=qEl.value.trim().toLowerCase();
+    var shown=DEMOS.filter(function(d){
+      var okCat=active==='All'||d.category===active;
+      var okQ=!q||(d.title+' '+d.description+' '+d.category).toLowerCase().indexOf(q)>=0;
+      return okCat&&okQ;
+    });
+    listEl.innerHTML='';
+    if(!shown.length){listEl.appendChild(el('p','empty','No demos match. Try another search or category.'));return;}
+    var groups={};
+    shown.forEach(function(d){(groups[d.category]=groups[d.category]||[]).push(d);});
+    Object.keys(groups).sort().forEach(function(c){
+      listEl.appendChild(el('h2',null,c));
+      var g=el('div','grid');
+      groups[c].sort(function(a,b){return a.title.localeCompare(b.title);}).forEach(function(d){
+        var a=el('a','card'); a.href=d.file; a.target='_blank'; a.rel='noopener';
+        a.appendChild(el('h3',null,d.title)); a.appendChild(el('p',null,d.description));
+        g.appendChild(a);
+      });
+      listEl.appendChild(g);
+    });
+  }
+
+  qEl.addEventListener('input',drawList);
+  drawChips(); drawList();
+})();
+</script>
+</body>
+</html>
