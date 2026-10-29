@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPST vs SPDT switch on D12</title>
+<style>
+:root{--bg:#fff;--t:#2c2c2a;--ts:#5f5e5a;--bd:#b4b2a9;--btn:#f1efe8;
+--gray-f:#F1EFE8;--gray-s:#5F5E5A;--gray-t:#444441;
+--amber-f:#FAEEDA;--amber-s:#854F0B;--amber-t:#633806;
+--green-f:#EAF3DE;--green-s:#3B6D11;--green-t:#27500A;
+--teal-f:#E1F5EE;--teal-s:#0F6E56;--teal-t:#085041}
+@media (prefers-color-scheme:dark){:root{--bg:#1f1e1d;--t:#e8e6dc;--ts:#b4b2a9;--bd:#5f5e5a;--btn:#2c2c2a;
+--gray-f:#444441;--gray-s:#B4B2A9;--gray-t:#F1EFE8;
+--amber-f:#633806;--amber-s:#FAC775;--amber-t:#FAEEDA;
+--green-f:#27500A;--green-s:#C0DD97;--green-t:#EAF3DE;
+--teal-f:#085041;--teal-s:#9FE1CB;--teal-t:#E1F5EE}}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,"Segoe UI",Calibri,Arial,sans-serif;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+p.sub{margin:0 0 12px;color:var(--ts);font-size:15px}
+svg{width:100%;height:auto;display:block}
+svg text{font-family:inherit}
+.t{font-size:14px;fill:var(--t)}.ts{font-size:12px;fill:var(--ts)}.th{font-size:14px;font-weight:600;fill:var(--t)}
+rect.c-gray{fill:var(--gray-f);stroke:var(--gray-s);stroke-width:.75}
+rect.c-amber{fill:var(--amber-f);stroke:var(--amber-s);stroke-width:.75}
+rect.c-green{fill:var(--green-f);stroke:var(--green-s);stroke-width:.75}
+rect.c-teal{fill:var(--teal-f);stroke:var(--teal-s);stroke-width:.75}
+text.c-amber{fill:var(--amber-t)}text.c-green{fill:var(--green-t)}text.c-teal{fill:var(--teal-t)}
+.wire{stroke:var(--t);stroke-width:1.5;fill:none}
+.dot{fill:var(--t)}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+button{padding:9px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--btn);color:var(--t);cursor:pointer;font:inherit;font-size:14px}
+button:hover{border-color:var(--t)}
+button:focus-visible{outline:2px solid var(--teal-s);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>SPST vs SPDT switch on D12</h1>
+<p class="sub">Move the switch and compare how each wiring behaves.</p>
+<svg viewBox="0 0 680 300" role="img" aria-label="Comparison of a two-pin SPST switch, which floats when open, and a three-pin SPDT switch, which always gives D12 a firm HIGH or LOW">
+<text class="th" x="40" y="24">Two pins used: SPST wiring</text>
+<text class="th" x="40" y="162">Three pins used: SPDT wiring</text>
+<text class="th" x="40" y="87">5V</text>
+<line class="wire" x1="70" y1="83" x2="120" y2="83"/>
+<circle class="dot" cx="120" cy="83" r="3"/>
+<line id="bl1" x1="120" y1="83" x2="190" y2="55" stroke="var(--t)" stroke-width="2" stroke-linecap="round"/>
+<circle class="dot" cx="200" cy="83" r="3"/>
+<line class="wire" x1="203" y1="83" x2="470" y2="83"/>
+<text class="ts" x="340" y="72" text-anchor="middle">to D12</text>
+<rect class="c-gray" x="470" y="40" width="170" height="86" rx="12"/>
+<circle class="dot" cx="470" cy="83" r="4"/>
+<rect id="ro1" class="c-amber" x="486" y="50" width="138" height="32" rx="8"/>
+<text id="v1" class="th c-amber" x="555" y="66" text-anchor="middle" dominant-baseline="central">HIGH</text>
+<text id="m1" class="ts" x="555" y="106" text-anchor="middle">Servo: unpredictable</text>
+<circle class="dot" cx="120" cy="198" r="3"/>
+<circle class="dot" cx="120" cy="252" r="3"/>
+<text class="th" x="106" y="202" text-anchor="end">5V</text>
+<text class="th" x="106" y="256" text-anchor="end">GND</text>
+<circle class="dot" cx="200" cy="225" r="3"/>
+<line id="bl2" x1="200" y1="225" x2="124" y2="198" stroke="var(--t)" stroke-width="2" stroke-linecap="round"/>
+<line class="wire" x1="203" y1="225" x2="470" y2="225"/>
+<text class="ts" x="340" y="214" text-anchor="middle">to D12</text>
+<rect class="c-gray" x="470" y="182" width="170" height="86" rx="12"/>
+<circle class="dot" cx="470" cy="225" r="4"/>
+<rect id="ro2" class="c-green" x="486" y="192" width="138" height="32" rx="8"/>
+<text id="v2" class="th c-green" x="555" y="208" text-anchor="middle" dominant-baseline="central">HIGH</text>
+<text id="m2" class="ts" x="555" y="248" text-anchor="middle">Servo: temp sensor</text>
+</svg>
+<div class="row"><button id="sw" type="button">Switch position: 5V side (click to move)</button></div>
+</div>
+<script>
+(function(){
+var onFive=true;
+var bl1=document.getElementById('bl1'),bl2=document.getElementById('bl2');
+var ro1=document.getElementById('ro1'),v1=document.getElementById('v1'),m1=document.getElementById('m1');
+var ro2=document.getElementById('ro2'),v2=document.getElementById('v2'),m2=document.getElementById('m2');
+var btn=document.getElementById('sw');
+function st(r,v,c){r.setAttribute('class',c);v.setAttribute('class','th '+c);}
+function render(){
+if(onFive){
+bl1.setAttribute('x2','196');bl1.setAttribute('y2','83');bl2.setAttribute('y2','198');
+st(ro1,v1,'c-green');v1.textContent='HIGH';m1.textContent='Servo: temp sensor';
+st(ro2,v2,'c-green');v2.textContent='HIGH';m2.textContent='Servo: temp sensor';
+btn.textContent='Switch position: 5V side (click to move)';
+}else{
+bl1.setAttribute('x2','190');bl1.setAttribute('y2','55');bl2.setAttribute('y2','252');
+st(ro1,v1,'c-amber');m1.textContent='Servo: unpredictable';
+st(ro2,v2,'c-teal');v2.textContent='LOW';m2.textContent='Servo: potentiometer';
+btn.textContent='Switch position: GND side (click to move)';
+}
+}
+btn.addEventListener('click',function(){onFive=!onFive;render();});
+setInterval(function(){if(!onFive){v1.textContent=Math.random()>0.5?'HIGH':'LOW';}},180);
+render();
+})();
+</script>
+</body>
+</html>

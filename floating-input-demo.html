@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floating input: what happens when a switch is open</title>
+<style>
+:root{--bg:#fff;--t:#2c2c2a;--ts:#5f5e5a;--bd:#b4b2a9;--btn:#f1efe8;
+--gray-f:#F1EFE8;--gray-s:#5F5E5A;--gray-t:#444441;
+--amber-f:#FAEEDA;--amber-s:#854F0B;--amber-t:#633806;
+--green-f:#EAF3DE;--green-s:#3B6D11;--green-t:#27500A;
+--teal-f:#E1F5EE;--teal-s:#0F6E56;--teal-t:#085041}
+@media (prefers-color-scheme:dark){:root{--bg:#1f1e1d;--t:#e8e6dc;--ts:#b4b2a9;--bd:#5f5e5a;--btn:#2c2c2a;
+--gray-f:#444441;--gray-s:#B4B2A9;--gray-t:#F1EFE8;
+--amber-f:#633806;--amber-s:#FAC775;--amber-t:#FAEEDA;
+--green-f:#27500A;--green-s:#C0DD97;--green-t:#EAF3DE;
+--teal-f:#085041;--teal-s:#9FE1CB;--teal-t:#E1F5EE}}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);color:var(--t);font-family:system-ui,-apple-system,"Segoe UI",Calibri,Arial,sans-serif;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin:0 0 4px}
+p.sub{margin:0 0 12px;color:var(--ts);font-size:15px}
+svg{width:100%;height:auto;display:block}
+svg text{font-family:inherit}
+.t{font-size:14px;fill:var(--t)}.ts{font-size:12px;fill:var(--ts)}.th{font-size:14px;font-weight:600;fill:var(--t)}
+rect.c-gray{fill:var(--gray-f);stroke:var(--gray-s);stroke-width:.75}
+rect.c-amber{fill:var(--amber-f);stroke:var(--amber-s);stroke-width:.75}
+rect.c-green{fill:var(--green-f);stroke:var(--green-s);stroke-width:.75}
+rect.c-teal{fill:var(--teal-f);stroke:var(--teal-s);stroke-width:.75}
+text.c-amber{fill:var(--amber-t)}text.c-green{fill:var(--green-t)}text.c-teal{fill:var(--teal-t)}
+.wire{stroke:var(--t);stroke-width:1.5;fill:none}
+.dot{fill:var(--t)}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+button{padding:9px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--btn);color:var(--t);cursor:pointer;font:inherit;font-size:14px}
+button:hover{border-color:var(--t)}
+button:focus-visible{outline:2px solid var(--teal-s);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Floating input: what happens when a switch is open</h1>
+<p class="sub">Open the switch and watch the D12 reading. Then add the pull-down resistor.</p>
+<svg viewBox="0 0 680 290" role="img" aria-label="Two-pin switch wired between 5V and Arduino pin D12, with an optional pull-down resistor to ground">
+<text class="th" x="40" y="148">5V</text>
+<line class="wire" x1="70" y1="150" x2="120" y2="150"/>
+<circle class="dot" cx="120" cy="150" r="3"/>
+<line id="blade" x1="120" y1="150" x2="190" y2="118" stroke="var(--t)" stroke-width="2" stroke-linecap="round"/>
+<circle class="dot" cx="200" cy="150" r="3"/>
+<text class="ts" x="160" y="182" text-anchor="middle">Switch</text>
+<line class="wire" x1="203" y1="150" x2="470" y2="150"/>
+<circle class="dot" cx="330" cy="150" r="3"/>
+<g id="pd" opacity="0">
+<line class="wire" x1="330" y1="150" x2="330" y2="172"/>
+<rect x="322" y="172" width="16" height="44" rx="2" fill="none" stroke="var(--t)" stroke-width="1.5"/>
+<line class="wire" x1="330" y1="216" x2="330" y2="240"/>
+<text class="ts" x="350" y="198">10 kΩ</text>
+<text class="th" x="330" y="262" text-anchor="middle">GND</text>
+</g>
+<text class="ts" x="400" y="138" text-anchor="middle">to D12</text>
+<rect class="c-gray" x="470" y="60" width="170" height="170" rx="12"/>
+<text class="th" x="555" y="86" text-anchor="middle">Arduino Uno</text>
+<circle class="dot" cx="470" cy="150" r="4"/>
+<text class="ts" x="486" y="118">D12 reads</text>
+<rect id="ro" class="c-amber" x="486" y="128" width="138" height="44" rx="8"/>
+<text id="val" class="th c-amber" x="555" y="150" text-anchor="middle" dominant-baseline="central">HIGH</text>
+<text id="msg" class="ts" x="555" y="200" text-anchor="middle">Floating: picks up noise</text>
+</svg>
+<div class="row">
+<button id="b1" type="button">Switch: open (click to close)</button>
+<button id="b2" type="button">Add pull-down resistor</button>
+</div>
+</div>
+<script>
+(function(){
+var swOn=false,pdOn=false;
+var blade=document.getElementById('blade'),pdg=document.getElementById('pd');
+var ro=document.getElementById('ro'),val=document.getElementById('val'),msg=document.getElementById('msg');
+var b1=document.getElementById('b1'),b2=document.getElementById('b2');
+function state(c){ro.setAttribute('class',c);val.setAttribute('class','th '+c);}
+function render(){
+if(swOn){blade.setAttribute('x2','196');blade.setAttribute('y2','150');}
+else{blade.setAttribute('x2','190');blade.setAttribute('y2','118');}
+pdg.setAttribute('opacity',pdOn?'1':'0');
+b1.textContent=swOn?'Switch: closed (click to open)':'Switch: open (click to close)';
+b2.textContent=pdOn?'Remove pull-down resistor':'Add pull-down resistor';
+if(swOn){state('c-green');val.textContent='HIGH';msg.textContent='Wired to 5V: solid HIGH';}
+else if(pdOn){state('c-teal');val.textContent='LOW';msg.textContent='Resistor ties pin to GND: solid LOW';}
+else{state('c-amber');msg.textContent='Floating: picks up noise';}
+}
+b1.addEventListener('click',function(){swOn=!swOn;render();});
+b2.addEventListener('click',function(){pdOn=!pdOn;render();});
+setInterval(function(){if(!swOn&&!pdOn){val.textContent=Math.random()>0.5?'HIGH':'LOW';}},180);
+render();
+})();
+</script>
+</body>
+</html>
